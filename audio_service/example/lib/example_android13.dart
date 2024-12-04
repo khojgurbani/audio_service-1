@@ -1,21 +1,14 @@
 // ignore_for_file: public_member_api_docs
 
-// FOR MORE EXAMPLES, VISIT THE GITHUB REPOSITORY AT:
+// This example demonstrates:
 //
-//  https://github.com/ryanheise/audio_service
-//
-// This example implements a minimal audio handler that renders the current
-// media item and playback state to the system notification and responds to 4
-// media actions:
-//
-// - play
-// - pause
-// - seek
-// - stop
+// - Android 13 fast forward, rewind, and stop working with internal custom actions
+// - Fast forward interval of 30 seconds with custom icons
+// - Android notification with custom "favorite" icon and custom handler.
 //
 // To run this example, use:
 //
-// flutter run
+// flutter run -t lib/example_android13.dart
 
 import 'dart:async';
 
@@ -37,6 +30,7 @@ Future<void> main() async {
       androidNotificationChannelId: 'com.ryanheise.myapp.channel.audio',
       androidNotificationChannelName: 'Audio playback',
       androidNotificationOngoing: true,
+      fastForwardInterval: Duration(seconds: 30),
     ),
   );
   runApp(const MyApp());
@@ -48,7 +42,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Audio Service Demo',
+      title: 'Demo Android 13',
       theme: ThemeData(primarySwatch: Colors.blue),
       home: const MainScreen(),
     );
@@ -62,7 +56,7 @@ class MainScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Audio Service Demo'),
+        title: const Text('Demo for Android 13'),
       ),
       body: Center(
         child: Column(
@@ -92,7 +86,7 @@ class MainScreen extends StatelessWidget {
                     else
                       _button(Icons.play_arrow, _audioHandler.play),
                     _button(Icons.stop, _audioHandler.stop),
-                    _button(Icons.fast_forward, _audioHandler.fastForward),
+                    _button(Icons.forward_30, _audioHandler.fastForward),
                   ],
                 );
               },
@@ -196,6 +190,15 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
   @override
   Future<void> stop() => _player.stop();
 
+  @override
+  Future<dynamic> customAction(String name, [Map<String, dynamic>? extras]) {
+    if (name == 'favorite') {
+      // ignore: avoid_print
+      print('Click favorite, level is ${extras?['level']}');
+    }
+    return super.customAction(name, extras);
+  }
+
   /// Transform a just_audio event into an audio_service state.
   ///
   /// This method is used from the constructor. Every event received from the
@@ -204,17 +207,25 @@ class AudioPlayerHandler extends BaseAudioHandler with SeekHandler {
   PlaybackState _transformEvent(PlaybackEvent event) {
     return PlaybackState(
       controls: [
-        MediaControl.rewind,
         if (_player.playing) MediaControl.pause else MediaControl.play,
         MediaControl.stop,
-        MediaControl.fastForward,
+        MediaControl.rewind,
+        const MediaControl(
+          androidIcon: 'drawable/baseline_forward_30_24',
+          label: 'Fast Forward',
+          action: MediaAction.fastForward,
+        ),
+        MediaControl.custom(
+            androidIcon: 'drawable/ic_baseline_favorite_24',
+            label: 'favorite',
+            name: 'favorite',
+            extras: <String, dynamic>{'level': 1}),
       ],
       systemActions: const {
         MediaAction.seek,
         MediaAction.seekForward,
         MediaAction.seekBackward,
       },
-      androidCompactActionIndices: const [0, 1, 3],
       processingState: const {
         ProcessingState.idle: AudioProcessingState.idle,
         ProcessingState.loading: AudioProcessingState.loading,

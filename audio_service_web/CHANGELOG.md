@@ -1,3 +1,11 @@
+## 0.1.3
+
+* Support rxdart 0.28.x.
+
+## 0.1.2
+
+* Support js '>=0.6.3 <0.8.0'
+
 ## 0.1.1
 
 * Better detection of browser support (@nt4f04uNd)
